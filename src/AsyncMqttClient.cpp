@@ -110,6 +110,44 @@ AsyncMqttClient& AsyncMqttClient::addServerFingerprint(const uint8_t* fingerprin
   _secureServerFingerprints.push_back(newFingerprint);
   return *this;
 }
+
+static bool parseHexNibble(char pb, uint8_t* res)
+{
+    if (pb >= '0' && pb <= '9') {
+        *res = (uint8_t) (pb - '0'); return true;
+    } else if (pb >= 'a' && pb <= 'f') {
+        *res = (uint8_t) (pb - 'a' + 10); return true;
+    } else if (pb >= 'A' && pb <= 'F') {
+        *res = (uint8_t) (pb - 'A' + 10); return true;
+    }
+    return false;
+}
+
+AsyncMqttClient& AsyncMqttClient::addServerFingerprint(const char* fingerprint_hex) {
+
+  uint8_t sha1[SHA1_SIZE];
+  int len = strlen(fingerprint_hex);
+  int pos = 0;
+  for (size_t i = 0; i < sizeof(sha1); ++i) {
+      while (pos < len && ((fingerprint_hex[pos] == ' ') || (fingerprint_hex[pos] == ':'))) {
+          ++pos;
+      }
+      if (pos > len - 2) {
+          DEBUGV("pos:%d len:%d fingerprint too short\r\n", pos, len);
+          return *this;
+      }
+      uint8_t high, low;
+      if (!parseHexNibble(fingerprint_hex[pos], &high) || !parseHexNibble(fingerprint_hex[pos+1], &low)) {
+          DEBUGV("pos:%d len:%d invalid hex sequence: %c%c\r\n", pos, len, fingerprint_hex[pos], fingerprint_hex[pos+1]);
+          return *this;
+      }
+      pos += 2;
+      sha1[i] = low | (high << 4);
+  }
+
+  return addServerFingerprint(sha1);
+}
+
 #endif
 
 AsyncMqttClient& AsyncMqttClient::onConnect(AsyncMqttClientInternals::OnConnectUserCallback callback) {

@@ -47,6 +47,7 @@ class AsyncMqttClient {
 #if ASYNC_TCP_SSL_ENABLED
   AsyncMqttClient& setSecure(bool secure);
   AsyncMqttClient& addServerFingerprint(const uint8_t* fingerprint);
+  AsyncMqttClient& addServerFingerprint(const char* fingerprint);
 #endif
 
   AsyncMqttClient& onConnect(AsyncMqttClientInternals::OnConnectUserCallback callback);
